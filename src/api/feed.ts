@@ -22,43 +22,43 @@ import { readIds } from "../utils/storage";
  *
  */
 export default function (sort: string, tags: Tags) {
-    let timeframe = 30;
-    if (sort.startsWith("popular")) {
-        if (sort === "popular-month") {
-            timeframe = 30;
-        } else if (sort === "popular-year") {
-            timeframe = 365;
-        } else if (sort === "popular-all") {
-            timeframe = 4000;
-        }
-        sort = "popular";
+  let timeframe = 30;
+  if (sort.startsWith("popular")) {
+    if (sort === "popular-month") {
+      timeframe = 30;
+    } else if (sort === "popular-year") {
+      timeframe = 365;
+    } else if (sort === "popular-all") {
+      timeframe = 4000;
     }
+    sort = "popular";
+  }
 
-    return useCachedPromise(
-        (sort, tags, timeframe) => async (options: { page: number }) => {
-            console.log(options.page);
-            const tagsData = [...tags.colors, ...tags.collections].join("-");
-            const feeds = await fetch("https://colorhunt.co/php/feed.php", {
-                method: "POST",
-                headers: {
-                    "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-                },
-                body: `step=${options.page}&tags=${tagsData}&timeframe=${timeframe}&sort=${sort}`,
-            }).then((res) => res.json() as unknown as Feed[]);
-            const svgs = await Promise.all(feeds.map((item) => Svgs.default()(item.code, true)));
-            const localLikes = await readIds();
-            return {
-                data: feeds.map((item, index) => ({
-                    data: item,
-                    svg: svgs[index] || "",
-                    liked: localLikes.includes(item.code),
-                })),
-                hasMore: feeds.length > 0,
-            };
+  return useCachedPromise(
+    (sort, tags, timeframe) => async (options: { page: number }) => {
+      console.log(options.page);
+      const tagsData = [...tags.colors, ...tags.collections].join("-");
+      const feeds = await fetch("https://colorhunt.co/php/feed.php", {
+        method: "POST",
+        headers: {
+          "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
         },
-        [sort, tags, timeframe],
-        {
-            keepPreviousData: true,
-        },
-    );
+        body: `step=${options.page}&tags=${tagsData}&timeframe=${timeframe}&sort=${sort}`,
+      }).then((res) => res.json() as unknown as Feed[]);
+      const svgs = await Promise.all(feeds.map((item) => Svgs.default()(item.code, true)));
+      const localLikes = await readIds();
+      return {
+        data: feeds.map((item, index) => ({
+          data: item,
+          svg: svgs[index] || "",
+          liked: localLikes.includes(item.code),
+        })),
+        hasMore: feeds.length > 0,
+      };
+    },
+    [sort, tags, timeframe],
+    {
+      keepPreviousData: true,
+    },
+  );
 }
