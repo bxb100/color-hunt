@@ -62,6 +62,7 @@ const fontData = fs.readFileSync(environment.assetsPath + "/Roboto-Regular.ttf")
 
 const cache = new Cache({
   namespace: "svgs",
+  capacity: 200
 });
 export class Svgs {
   public static async core(id: string, show: boolean, width: number, height: number) {
@@ -71,7 +72,7 @@ export class Svgs {
     }
     // sleep 300ms to wait for GC
     // TODO: maybe can using `global.gc()` if available
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 300));
     const graph = await satori(<Svg show={show} id={id} />, {
       width: width,
       height: height,

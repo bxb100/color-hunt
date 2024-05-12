@@ -36,7 +36,6 @@ export default function (sort: string, tags: Tags) {
 
   return useCachedPromise(
     (sort, tags, timeframe) => async (options: { page: number }) => {
-      console.log(options.page);
       const tagsData = [...tags.colors, ...tags.collections].join("-");
       const feeds = await fetch("https://colorhunt.co/php/feed.php", {
         method: "POST",
@@ -45,8 +44,19 @@ export default function (sort: string, tags: Tags) {
         },
         body: `step=${options.page}&tags=${tagsData}&timeframe=${timeframe}&sort=${sort}`,
       }).then((res) => res.json() as unknown as Feed[]);
-      const svgs = await Promise.all(feeds.map((item) => Svgs.default()(item.code, true)));
+
+      if (options.page > 10) {
+        // prevent JS heap out of memory
+        return {
+          data: [],
+          hasMore: false,
+        }
+      }
+
       const localLikes = await readIds();
+
+      const svgs = await Promise.all(feeds.map((item) => Svgs.default()(item.code, true)));
+
       return {
         data: feeds.map((item, index) => ({
           data: item,
@@ -56,9 +66,6 @@ export default function (sort: string, tags: Tags) {
         hasMore: feeds.length > 0,
       };
     },
-    [sort, tags, timeframe],
-    {
-      keepPreviousData: true,
-    },
+    [sort, tags, timeframe]
   );
 }
