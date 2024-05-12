@@ -36,7 +36,7 @@ export default function (sort: string, tags: Tags) {
 
   return useCachedPromise(
     (sort, tags, timeframe) => async (options: { page: number }) => {
-      console.log("fetching", options.page, sort, tags, timeframe)
+      // console.log("fetching", options.page, sort, tags, timeframe);
 
       if (options.page > 11) {
         // ERR_WORKER_OUT_OF_MEMORY
@@ -44,7 +44,7 @@ export default function (sort: string, tags: Tags) {
         return {
           data: [],
           hasMore: false,
-        }
+        };
       }
 
       const tagsData = [...tags.colors, ...tags.collections].join("-");
@@ -58,9 +58,9 @@ export default function (sort: string, tags: Tags) {
 
       const localLikes = await readIds();
 
-      const svgs: string[] = []
+      const svgs: string[] = [];
       for (const feed of feeds) {
-        svgs.push(await Svgs.default()(feed.code, true) || "")
+        svgs.push((await Svgs.default()(feed.code, true)) || "");
       }
 
       return {
@@ -72,6 +72,6 @@ export default function (sort: string, tags: Tags) {
         hasMore: feeds.length > 0,
       };
     },
-    [sort, tags, timeframe]
+    [sort, tags, timeframe],
   );
 }

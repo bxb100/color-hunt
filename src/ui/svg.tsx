@@ -62,7 +62,7 @@ const fontData = fs.readFileSync(environment.assetsPath + "/Roboto-Regular.ttf")
 
 const cache = new Cache({
   namespace: "svgs",
-  capacity: 100
+  capacity: 100,
 });
 
 export class Svgs {

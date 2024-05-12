@@ -8,7 +8,9 @@
 
 <p align="center">
 Color Palettes for Designers and Artists
+</p>
 
+<p align="center">
 <img width="862" src="metadata/1.png"  />
 <img width="862" src="metadata/2.png"  />
 <img width="862" src="metadata/3.png"  />
