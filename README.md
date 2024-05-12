@@ -25,7 +25,7 @@ search, filter, and copy color palettes to their clipboard.
 The extension utilizes [satori](https://github.com/vercel/satori) to generate SVGs, which consumes a significant amount
 of memory. Given that Raycast currently has a memory limit of `100MB`[^1], this may cause the heap out of memory.
 
-so it currently only support fetch the first **10 pages**.
+so it currently only support fetch the first **11 pages**.
 
 ## Installation
 

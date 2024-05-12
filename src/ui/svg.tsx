@@ -62,17 +62,27 @@ const fontData = fs.readFileSync(environment.assetsPath + "/Roboto-Regular.ttf")
 
 const cache = new Cache({
   namespace: "svgs",
-  capacity: 200
+  capacity: 100
 });
+
 export class Svgs {
   public static async core(id: string, show: boolean, width: number, height: number) {
     const key = `${id}-${show}-${width}-${height}`;
     if (cache.has(key)) {
       return cache.get(key);
     }
-    // sleep 300ms to wait for GC
-    // TODO: maybe can using `global.gc()` if available
-    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    /*
+    const {resourceLimits} = await import('node:worker_threads')
+    console.log(resourceLimits)
+    console.log(process.memoryUsage.rss() / 1_048_576)
+    */
+    //  1024 * 1024
+    if (process.memoryUsage().heapUsed / 1_048_576 > 50) {
+      // console.log("Memory usage is high, trying to free some memory");
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+
     const graph = await satori(<Svg show={show} id={id} />, {
       width: width,
       height: height,

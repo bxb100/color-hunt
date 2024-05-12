@@ -36,6 +36,17 @@ export default function (sort: string, tags: Tags) {
 
   return useCachedPromise(
     (sort, tags, timeframe) => async (options: { page: number }) => {
+      console.log("fetching", options.page, sort, tags, timeframe)
+
+      if (options.page > 11) {
+        // ERR_WORKER_OUT_OF_MEMORY
+        // Worker terminated due to reaching memory limit: JS heap out of memory
+        return {
+          data: [],
+          hasMore: false,
+        }
+      }
+
       const tagsData = [...tags.colors, ...tags.collections].join("-");
       const feeds = await fetch("https://colorhunt.co/php/feed.php", {
         method: "POST",
@@ -45,22 +56,17 @@ export default function (sort: string, tags: Tags) {
         body: `step=${options.page}&tags=${tagsData}&timeframe=${timeframe}&sort=${sort}`,
       }).then((res) => res.json() as unknown as Feed[]);
 
-      if (options.page > 10) {
-        // prevent JS heap out of memory
-        return {
-          data: [],
-          hasMore: false,
-        }
-      }
-
       const localLikes = await readIds();
 
-      const svgs = await Promise.all(feeds.map((item) => Svgs.default()(item.code, true)));
+      const svgs: string[] = []
+      for (const feed of feeds) {
+        svgs.push(await Svgs.default()(feed.code, true) || "")
+      }
 
       return {
         data: feeds.map((item, index) => ({
           data: item,
-          svg: svgs[index] || "",
+          svg: svgs[index],
           liked: localLikes.includes(item.code),
         })),
         hasMore: feeds.length > 0,
