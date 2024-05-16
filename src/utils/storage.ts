@@ -12,6 +12,7 @@ export async function read(): Promise<StorageData[]> {
   try {
     const likesJson = await LocalStorage.getItem<string>(key);
     if (likesJson) {
+      console.log(likesJson);
       return JSON.parse(likesJson) as StorageData[];
     }
     return [];
