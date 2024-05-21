@@ -1,10 +1,21 @@
-import { Action, ActionPanel, Color, environment, Grid, Icon, showToast, Toast, useNavigation } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Color,
+  environment,
+  Grid,
+  Icon,
+  Keyboard,
+  showToast,
+  Toast,
+  useNavigation,
+} from "@raycast/api";
 import feed from "./api/feed";
 import { eachHex } from "./utils/util";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PaletteDetail } from "./components/PaletteDetail";
 import { SearchForm } from "./components/SearchForm";
-import { IndexData, Tags } from "./type";
+import { Tags } from "./type";
 import fetch from "cross-fetch";
 import like from "./api/like";
 import fs from "fs";
@@ -27,33 +38,22 @@ export default function Command() {
 
   const { isLoading, data, pagination, mutate } = feed(sort, tags);
 
-  const { isLoading: favoriteLoading, value, favorite, unFavorite } = useFavorite();
+  const { isLoading: favoriteLoading, value, favorite, unFavorite, removeValue } = useFavorite();
+
+  const isFavourite = useCallback(
+    (code: string) => {
+      if (value) {
+        return value.map((item) => item.code).includes(code);
+      }
+      return false;
+    },
+    [value],
+  );
 
   const favoriteFunc = async (code: string, svg: string) => {
     const toast = await showToast({ style: Toast.Style.Animated, title: "Liking Palette" });
     try {
-      await mutate(
-        like(code).then(() => favorite(code, svg)),
-        {
-          optimisticUpdate: (data: IndexData[] | undefined) => {
-            if (!data) {
-              return [];
-            }
-            return data.map((item) => {
-              if (item.data.code === code) {
-                return {
-                  ...item,
-                  data: {
-                    ...item.data,
-                    likes: (parseInt(item.data.likes) + 1).toString(),
-                  },
-                };
-              }
-              return item;
-            });
-          },
-        },
-      );
+      await mutate(like(code).then(() => favorite(code, svg)));
       toast.style = Toast.Style.Success;
       toast.title = "Liked";
     } catch (error) {
@@ -129,10 +129,14 @@ export default function Command() {
                     title="Remove From Favorites"
                     onAction={() => unFavorite(item.code)}
                     icon={Icon.StarDisabled}
-                    shortcut={{
-                      modifiers: ["cmd"],
-                      key: "n",
-                    }}
+                    shortcut={Keyboard.Shortcut.Common.Pin}
+                  />
+                  <Action
+                    style={Action.Style.Destructive}
+                    title="Remove All Favorites"
+                    onAction={removeValue}
+                    icon={Icon.Trash}
+                    shortcut={Keyboard.Shortcut.Common.RemoveAll}
                   />
                 </ActionPanel>
               }
@@ -161,26 +165,22 @@ export default function Command() {
                     icon={Icon.MagnifyingGlass}
                   />
                   <Action
-                    title="Like & Favorite"
-                    onAction={() => favoriteFunc(item.data.code, item.svg)}
-                    icon={Icon.Star}
-                    shortcut={{
-                      modifiers: ["cmd"],
-                      key: "l",
+                    title={isFavourite(item.data.code) ? "Remove From Favorites" : "Like & Favorite"}
+                    onAction={async () => {
+                      if (isFavourite(item.data.code)) {
+                        await unFavorite(item.data.code);
+                      } else {
+                        await favoriteFunc(item.data.code, item.svg);
+                      }
                     }}
-                  />
-                  <Action
-                    title="Remove From Favorites"
-                    onAction={() => unFavorite(item.data.code)}
-                    icon={Icon.StarDisabled}
-                    shortcut={{
-                      modifiers: ["cmd"],
-                      key: "n",
-                    }}
+                    icon={isFavourite(item.data.code) ? Icon.StarDisabled : Icon.Star}
+                    shortcut={Keyboard.Shortcut.Common.Pin}
                   />
                 </ActionPanel>
               }
-              accessory={item.liked ? { icon: { source: Icon.Star, tintColor: Color.Yellow } } : undefined}
+              accessory={
+                isFavourite(item.data.code) ? { icon: { source: Icon.Star, tintColor: Color.Yellow } } : undefined
+              }
               key={sort === "random" ? item.data.code + index : item.data.code}
               title={`❤ ${item.data.likes}`}
               keywords={Array.from(eachHex(item.data.code))}
