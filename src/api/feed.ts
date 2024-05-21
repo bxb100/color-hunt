@@ -2,7 +2,6 @@ import { usePromise } from "@raycast/utils";
 import { Feed, Tags } from "../type";
 import fetch from "cross-fetch";
 import { Svgs } from "../ui/svg";
-import { launchCommand, LaunchType } from "@raycast/api";
 
 /**
  * New
@@ -62,20 +61,5 @@ export default function (sort: string, tags: Tags) {
       };
     },
     [sort, tags, timeframe],
-    {
-      onData: async () => {
-        try {
-          await launchCommand({
-            name: "clear",
-            type: LaunchType.Background,
-            context: {
-              clear: true,
-            },
-          });
-        } catch (_err) {
-          // ignore
-        }
-      },
-    },
   );
 }

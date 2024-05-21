@@ -1,25 +1,13 @@
-import {
-  Action,
-  ActionPanel,
-  Color,
-  environment,
-  Grid,
-  Icon,
-  Keyboard,
-  showToast,
-  Toast,
-  useNavigation,
-} from "@raycast/api";
+import { Color, environment, Grid, Icon, showToast, Toast } from "@raycast/api";
 import feed from "./api/feed";
 import { eachHex } from "./utils/util";
 import { useCallback, useEffect, useState } from "react";
-import { PaletteDetail } from "./components/PaletteDetail";
-import { SearchForm } from "./components/SearchForm";
 import { Tags } from "./type";
 import fetch from "cross-fetch";
 import like from "./api/like";
 import fs from "fs";
 import { useFavorite } from "./hook/useFavorite";
+import { IndexActionPanel } from "./components/IndexActionPanel";
 
 global.fetch = fetch;
 const initialTitle = "Website";
@@ -38,7 +26,7 @@ export default function Command() {
 
   const { isLoading, data, pagination, mutate } = feed(sort, tags);
 
-  const { isLoading: favoriteLoading, value, favorite, unFavorite, removeValue } = useFavorite();
+  const { isLoading: favoriteLoading, value, favorite, unFavorite } = useFavorite();
 
   const isFavourite = useCallback(
     (code: string) => {
@@ -81,7 +69,6 @@ export default function Command() {
     setTitle(title);
   }, [tags, sort]);
 
-  const { pop } = useNavigation();
   return (
     <Grid
       columns={5}
@@ -110,35 +97,14 @@ export default function Command() {
               key={item.code}
               content={item.svg}
               actions={
-                <ActionPanel>
-                  <Action.Push target={<PaletteDetail id={item.code} />} title="View Details" icon={Icon.Bird} />
-                  <Action.Push
-                    target={
-                      <SearchForm
-                        tags={tags}
-                        submitCallback={(values) => {
-                          setTags(values);
-                          pop();
-                        }}
-                      />
-                    }
-                    title="Search Palettes"
-                    icon={Icon.MagnifyingGlass}
-                  />
-                  <Action
-                    title="Remove From Favorites"
-                    onAction={() => unFavorite(item.code)}
-                    icon={Icon.StarDisabled}
-                    shortcut={Keyboard.Shortcut.Common.Pin}
-                  />
-                  <Action
-                    style={Action.Style.Destructive}
-                    title="Remove All Favorites"
-                    onAction={removeValue}
-                    icon={Icon.Trash}
-                    shortcut={Keyboard.Shortcut.Common.RemoveAll}
-                  />
-                </ActionPanel>
+                <IndexActionPanel
+                  code={item.code}
+                  tags={tags}
+                  setTags={setTags}
+                  favorite={{ isLoading: favoriteLoading, value }}
+                  isFavourite={true}
+                  unFavoriteFunc={() => unFavorite(item.code)}
+                />
               }
             />
           );
@@ -149,40 +115,22 @@ export default function Command() {
           return (
             <Grid.Item
               actions={
-                <ActionPanel>
-                  <Action.Push target={<PaletteDetail id={item.data.code} />} title="View Details" icon={Icon.Bird} />
-                  <Action.Push
-                    target={
-                      <SearchForm
-                        tags={tags}
-                        submitCallback={(values) => {
-                          setTags(values);
-                          pop();
-                        }}
-                      />
-                    }
-                    title="Search Palettes"
-                    icon={Icon.MagnifyingGlass}
-                  />
-                  <Action
-                    title={isFavourite(item.data.code) ? "Remove From Favorites" : "Like & Favorite"}
-                    onAction={async () => {
-                      if (isFavourite(item.data.code)) {
-                        await unFavorite(item.data.code);
-                      } else {
-                        await favoriteFunc(item.data.code, item.svg);
-                      }
-                    }}
-                    icon={isFavourite(item.data.code) ? Icon.StarDisabled : Icon.Star}
-                    shortcut={Keyboard.Shortcut.Common.Pin}
-                  />
-                </ActionPanel>
+                <IndexActionPanel
+                  code={item.data.code}
+                  tags={tags}
+                  setTags={setTags}
+                  favorite={{ isLoading: favoriteLoading, value }}
+                  isFavourite={isFavourite(item.data.code)}
+                  unFavoriteFunc={() => unFavorite(item.data.code)}
+                  favoriteFunc={() => favoriteFunc(item.data.code, item.svg)}
+                />
               }
               accessory={
                 isFavourite(item.data.code) ? { icon: { source: Icon.Star, tintColor: Color.Yellow } } : undefined
               }
               key={sort === "random" ? item.data.code + index : item.data.code}
               title={`❤ ${item.data.likes}`}
+              subtitle={item.data.date}
               keywords={Array.from(eachHex(item.data.code))}
               content={item.svg}
             />
